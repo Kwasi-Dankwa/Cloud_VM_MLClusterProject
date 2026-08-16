@@ -1,0 +1,6 @@
+﻿memory_bucket,bucket_category,min_value,max_value,representative_value
+small_4_8,memory_gb,4,8,4
+medium_8_16,memory_gb,8,16,8
+large_16_32,memory_gb,16,32,16
+xlarge_32_64,memory_gb,32,64,32
+xxlarge_64_128,memory_gb,64,128,64

@@ -1,0 +1,6 @@
+core_count_bucket,bucket_category,min_value,max_value,representative_value
+small_2_4,cores,2,4,2
+medium_4_8,cores,4,8,4
+large_8_16,cores,8,16,8
+xlarge_16_32,cores,16,32,16
+xxlarge_32_64,cores,32,64,32
