@@ -1,79 +1,150 @@
-# Cloud_VM_MLClusterProject
+# Cloud VM ML Cluster Project
+
 Developing an end-to-end AI-assisted clustering workflow that transforms raw cloud telemetry into meaningful workload archetypes and actionable cloud optimization insights.
 
-Business Context:
+## Business Context
 
-Atlas Financial Group, a regional bank, runs its on-demand VM fleet across two regional cloud providers. As a regulated financial institution operating on margin-sensitive retail and commercial banking lines, every cost centre is scrutinised by both the CFO and external auditors, and cloud compute has become one of the fastest-growing line items on the books. A modernisation programme over the last three years lifted most workloads from on-premises data centres into the cloud, but the team is still operating with lift-and-shift sizing decisions made under "better safe than sorry" assumptions.
+**Atlas Financial Group**, a regional bank, runs its on-demand VM fleet across two regional cloud providers.
 
-An internal audit found that roughly 31% of VMs are averaging under 15% CPU utilization, fully billable compute that is largely doing nothing, translating to an estimated $8M of annual waste against a $52M cloud bill. The FinOps team's target is to bring this under 12% within two billing cycles.
+A modernisation programme over the last three years moved most workloads from on-premises data centres to the cloud. However, many workloads still use "better safe than sorry" sizing decisions from the migration period.
 
-The waste is easy to detect. A simple average CPU filter surfaces it in minutes. The hard part is that average CPU alone cannot tell you what action to take. A VM at 8% CPU could be a forgotten zombie that should be killed, an over-provisioned server that should be downsized, or a bursty daytime API that spikes to 80% at noon and would break if touched. One filter, three different actions, and getting it wrong means a 2 am incident call. Today the Cloud Platform team investigates each VM individually and chases application owners for sign-off. Owners have no incentive to shrink their own resources. The process stalls, waste compounds, and the team cannot keep up.
+An internal audit found that:
 
-What Atlas needs is to turn thousands of individual negotiations into a handful of defensible group-level decisions by classifying every VM into a behavioural archetype and attaching one sizing action per archetype.
+- ~31% of VMs average below 15% CPU utilization
+- This represents an estimated **$8M in annual cloud waste**
+- Total annual cloud spend is approximately **$52M**
+- The FinOps team aims to reduce the proportion of highly underutilized VMs to **below 12% within two billing cycles**
 
-Objective:
+The challenge is that **average CPU utilization alone cannot determine the correct optimization action**.
 
-The objective is to group Atlas's on-demand VM fleet into a small number of distinct behavioural archetypes based on actual utilization and workload patterns, providing the FinOps team with an explainable and defensible view of how each VM operates, not just what it costs. The resulting archetypes will serve as the foundation for a standardised sizing and optimisation policy, enabling CFO and engineering leadership to make consistent, fleet-level decisions without negotiating thousands of individual VMs.
+For example, a VM averaging 8% CPU could be:
 
-Scope of this prototype:
+- A forgotten VM that should be decommissioned
+- An over-provisioned workload that should be downsized
+- A bursty application that occasionally spikes to 80% CPU
 
-This prototype works with a 2-day observation window across 1,500 VMs (~765,000 readings) and uses CPU and memory utilization features. It is sufficient to validate the methodology and prove that distinct archetypes emerge from behavioural data alone.
+The objective is therefore to move beyond simple utilization thresholds and identify **behavioural patterns across the VM fleet**.
 
-A production deployment will require two expansions:
+## Objective
 
-More data - at least 30 days of telemetry across the full ~4,500 VM fleet to capture weekly cycles, end-of-month batch jobs, and seasonal patterns that a short window cannot surface.
+The objective is to group Atlas's VM fleet into a small number of distinct **behavioural archetypes** based on actual CPU and memory utilization patterns.
 
-More features - disk I/O and network throughput alongside CPU and memory, because a VM can look idle on CPU while being bottlenecked on another resource, and downsizing it would trigger a workload failure.
+These archetypes will provide FinOps with an explainable and defensible foundation for standardized VM sizing and optimization decisions, reducing the need to investigate thousands of VMs individually.
 
-The pipeline, feature engineering approach, and clustering technique stay the same; only the data volume and feature breadth scale up.
+## Prototype Scope
 
-Data Dictionary:
+The prototype uses:
 
-The dataset is provided as four related tables that combine on the vm_id key (and the bucket keys for the size lookup) to give a unified view of each Virtual Machine (VM).
+| Metric | Scope |
+|---|---|
+| Observation window | 2 days |
+| VMs | ~1,500 |
+| Telemetry readings | ~765,000 |
+| Monitoring interval | 5 minutes |
+| Features | CPU and Memory utilization |
 
-1. VM Information (vm_info.csv)
-One record per VM with metadata about its lifecycle and provisioned configuration.
+This is sufficient to validate the methodology and determine whether meaningful workload archetypes emerge from behavioural data alone.
 
-Attribute: Description
-vm_id: Unique identifier for the VM.
-subscription_id: The subscription the VM belongs to.
-deployment_id: The deployment the VM was provisioned under.
-vm_created_ts: VM creation timestamp (Unix epoch seconds).
-vm_deleted_ts: VM deletion timestamp (Unix epoch seconds). Blank values indicate the VM is still active.
-vm_category: Workload type of the VM (Interactive or Delay-Insensitive).
-core_count_bucket: Bucket representing the provisioned vCPU allocation.
-memory_bucket: Bucket representing the provisioned memory allocation.
+### Production Expansion
 
-2. VM Utilization Time Series (vm_utilization_timeseries.csv)
-Resource utilization metrics collected every 5 minutes for each VM.
+A production implementation would require:
 
-Attribute: Description
-vm_id: Unique identifier for the VM.
-timestamp: Start time of the 5-minute monitoring window (Unix epoch seconds, UTC).
-min_cpu_5min: Minimum CPU utilization (%) observed during the window.
-max_cpu_5min: Maximum CPU utilization (%) observed during the window.
-avg_cpu_5min: Average CPU utilization (%) during the window.
-min_memory_5min: Minimum memory utilization (%) observed during the window.
-max_memory_5min: Maximum memory utilization (%) observed during the window.
-avg_memory_5min: Average memory utilization (%) during the window.
+**More data**
+- At least 30 days of telemetry
+- Full fleet of ~4,500 VMs
+- Weekly utilization patterns
+- End-of-month batch workloads
+- Seasonal patterns
 
-3. CPU Type Definitions (cpu_type_definitions.csv)
-Defines the CPU configuration buckets used to categorize VMs based on their provisioned vCPU capacity.
+**More features**
+- CPU utilization
+- Memory utilization
+- Disk I/O
+- Network throughput
 
-Attribute: Description
-core_count_bucket: Unique identifier for the CPU configuration bucket.
-bucket_category: Descriptive label assigned to the CPU capacity range.
-min_value: Lower bound of the vCPU range represented by the bucket.
-max_value: Upper bound of the vCPU range represented by the bucket.
-representative_value: Representative vCPU value used for the bucket.
+A VM may appear idle from a CPU perspective while being constrained by another resource. Including additional resource metrics reduces the risk of unsafe sizing recommendations.
 
-4. Memory Type Definitions (memory_type_definitions.csv)
-Defines the memory configuration buckets used to categorize VMs based on their provisioned memory capacity.
+The core pipeline, feature engineering approach, and clustering methodology remain the same; production primarily expands the **data volume and feature breadth**.
 
-Attribute: Description
-memory_bucket: Unique identifier for the Memory configuration bucket.
-bucket_category: Descriptive label assigned to the memory capacity range.
-min_value: Lower bound of the memory range represented by the bucket.
-max_value: Upper bound of the memory range represented by the bucket.
-representative_value: Representative memory value used for the bucket.
+## Data Dictionary
+
+The dataset consists of four related tables joined primarily through `vm_id` and configuration bucket keys.
+
+### 1. VM Information
+
+**File:** `vm_info.csv`
+
+Contains one record per VM describing its lifecycle and provisioned configuration.
+
+| Attribute | Description |
+|---|---|
+| `vm_id` | Unique identifier for the VM |
+| `subscription_id` | Subscription associated with the VM |
+| `deployment_id` | Deployment under which the VM was provisioned |
+| `vm_created_ts` | VM creation timestamp (Unix epoch seconds) |
+| `vm_deleted_ts` | VM deletion timestamp (Unix epoch seconds); blank values indicate the VM is still active |
+| `vm_category` | Workload type: Interactive or Delay-Insensitive |
+| `core_count_bucket` | Bucket representing the provisioned vCPU allocation |
+| `memory_bucket` | Bucket representing the provisioned memory allocation |
+
+### 2. VM Utilization Time Series
+
+**File:** `vm_utilization_timeseries.csv`
+
+Contains CPU and memory utilization measurements collected every five minutes.
+
+| Attribute | Description |
+|---|---|
+| `vm_id` | Unique identifier for the VM |
+| `timestamp` | Start time of the 5-minute monitoring window (Unix epoch seconds, UTC) |
+| `min_cpu_5min` | Minimum CPU utilization during the window |
+| `max_cpu_5min` | Maximum CPU utilization during the window |
+| `avg_cpu_5min` | Average CPU utilization during the window |
+| `min_memory_5min` | Minimum memory utilization during the window |
+| `max_memory_5min` | Maximum memory utilization during the window |
+| `avg_memory_5min` | Average memory utilization during the window |
+
+### 3. CPU Type Definitions
+
+**File:** `cpu_type_definitions.csv`
+
+Defines the CPU configuration buckets used to categorize VMs based on provisioned vCPU capacity.
+
+| Attribute | Description |
+|---|---|
+| `core_count_bucket` | Unique CPU configuration bucket |
+| `bucket_category` | Descriptive label for the CPU capacity range |
+| `min_value` | Lower bound of the vCPU range |
+| `max_value` | Upper bound of the vCPU range |
+| `representative_value` | Representative vCPU value for the bucket |
+
+### 4. Memory Type Definitions
+
+**File:** `memory_type_definitions.csv`
+
+Defines the memory configuration buckets used to categorize VMs based on provisioned memory capacity.
+
+| Attribute | Description |
+|---|---|
+| `memory_bucket` | Unique memory configuration bucket |
+| `bucket_category` | Descriptive label for the memory capacity range |
+| `min_value` | Lower bound of the memory range |
+| `max_value` | Upper bound of the memory range |
+| `representative_value` | Representative memory value for the bucket |
+
+## Expected Outcome
+
+The project aims to produce a small number of explainable VM behavioural archetypes, with each archetype associated with an appropriate cloud optimization action.
+
+For example:
+
+| Behavioural Archetype | Potential Action |
+|---|---|
+| Consistently idle | Decommission |
+| Consistently underutilized | Downsize |
+| Low average but highly bursty | Investigate / cautiously right-size |
+| Balanced utilization | Maintain |
+| Memory-heavy workload | Memory-focused sizing review |
+
+The final clustering results will provide the foundation for a standardized, fleet-level cloud optimization strategy rather than VM-by-VM investigation.
 
