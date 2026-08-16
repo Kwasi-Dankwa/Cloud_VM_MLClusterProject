@@ -1,0 +1,107 @@
+
+================================================================================
+VM metadata (vm_info)
+================================================================================
+Rows: 1,500 | Columns: 8
+
+Data types:
+vm_id                 object
+subscription_id       object
+deployment_id         object
+vm_created_ts          int64
+vm_deleted_ts        float64
+vm_category           object
+core_count_bucket     object
+memory_bucket         object
+
+Missing values:
+vm_id                   0
+subscription_id         0
+deployment_id           0
+vm_created_ts           0
+vm_deleted_ts        1338
+vm_category             0
+core_count_bucket       0
+memory_bucket           0
+
+================================================================================
+Utilization readings (vm_utilization)
+================================================================================
+Rows: 765,189 | Columns: 8
+
+Data types:
+vm_id               object
+timestamp            int64
+min_cpu_5min       float64
+max_cpu_5min       float64
+avg_cpu_5min       float64
+min_memory_5min    float64
+max_memory_5min    float64
+avg_memory_5min    float64
+
+Missing values:
+vm_id              0
+timestamp          0
+min_cpu_5min       0
+max_cpu_5min       0
+avg_cpu_5min       0
+min_memory_5min    0
+max_memory_5min    0
+avg_memory_5min    0
+
+================================================================================
+Combined size-bucket lookup (size_bucket_reference)
+================================================================================
+Rows: 10 | Columns: 6
+
+Data types:
+size_bucket             object
+bucket_category         object
+min_value                int64
+max_value                int64
+representative_value     int64
+resource_type           object
+
+Missing values:
+size_bucket             0
+bucket_category         0
+min_value               0
+max_value               0
+representative_value    0
+resource_type           0
+
+================================================================================
+VM lifecycle timestamp review
+================================================================================
+Missing vm_created_ts: 0
+Meaning: a missing creation timestamp has no lifecycle-state meaning in the data dictionary; it is a data-quality gap to investigate.
+
+Missing vm_deleted_ts: 1,338
+Meaning: a missing deletion timestamp means the VM is still active.
+
+================================================================================
+Telemetry coverage per VM
+================================================================================
+VMs with at least one utilization reading: 1,499
+
+Utilization-reading count distribution:
+count    1499.000000
+mean      510.466311
+std       126.476495
+min         2.000000
+25%       553.000000
+50%       558.000000
+75%       561.000000
+max       571.000000
+
+VMs with fewer than the maximum (571) readings: 1,498
+
+================================================================================
+VM ID reconciliation
+================================================================================
+Unique VMs in metadata: 1,500
+Unique VMs in utilization: 1,499
+Metadata VMs without telemetry: 1
+Utilization VMs without metadata: 0
+VM populations line up exactly: False
+Example metadata-only VM IDs: ['vm_01497']
